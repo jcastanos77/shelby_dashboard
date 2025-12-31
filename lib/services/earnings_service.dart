@@ -1,0 +1,42 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+
+class EarningsService {
+  final _db = FirebaseDatabase.instance.ref();
+  final _uid = FirebaseAuth.instance.currentUser!.uid;
+
+  Future<int> getDayEarnings(DateTime date) async {
+    final key = _keyFromDate(date);
+    final snap = await _db.child('appointments/$_uid/$key').get();
+
+    if (!snap.exists) return 0;
+
+    final Map data = snap.value as Map;
+    int total = 0;
+
+    data.forEach((_, value) {
+      if (value['status'] == 'done') {
+        total += value['price'] as int;
+      }
+    });
+
+    return total;
+  }
+
+  Future<int> getRangeEarnings(DateTime from, DateTime to) async {
+    int total = 0;
+
+    for (DateTime d = from;
+    !d.isAfter(to);
+    d = d.add(const Duration(days: 1))) {
+      total += await getDayEarnings(d);
+    }
+
+    return total;
+  }
+
+  String _keyFromDate(DateTime d) =>
+      '${d.year}-${_two(d.month)}-${_two(d.day)}';
+
+  String _two(int n) => n.toString().padLeft(2, '0');
+}
