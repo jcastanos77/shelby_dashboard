@@ -63,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
                   controller: emailCtrl,
                   label: 'Correo',
                   icon: Icons.email,
+                  textType: TextInputType.emailAddress
                 ),
                 const SizedBox(height: 16),
 
@@ -124,10 +125,12 @@ class _LoginPageState extends State<LoginPage> {
     required String label,
     required IconData icon,
     bool obscure = false,
+    TextInputType textType = TextInputType.text
   }) {
     return TextField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: textType,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),

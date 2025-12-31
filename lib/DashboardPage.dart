@@ -1,3 +1,4 @@
+import 'package:dashboard_barbershop/pages/login_page.dart';
 import 'package:dashboard_barbershop/quick_action.dart';
 import 'package:dashboard_barbershop/services/barbers_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -51,6 +52,15 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              // TODO logout
+              logout(context);
             },
           )
         ],
