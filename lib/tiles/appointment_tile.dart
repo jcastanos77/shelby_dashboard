@@ -39,7 +39,26 @@ class AppointmentTile extends StatelessWidget {
         appointment.time,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      title: Text(appointment.service),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            appointment.clientName,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            appointment.service,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
