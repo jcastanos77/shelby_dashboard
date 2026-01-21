@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'DashboardPage.dart';
 import 'dashboard_home.dart';
 import 'pages/login_page.dart';
 
@@ -24,7 +25,7 @@ class AuthGate extends StatelessWidget {
           return const LoginPage();
         }
 
-        return const DashboardHome();
+        return const DashboardPage();
       },
     );
   }

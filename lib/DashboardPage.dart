@@ -1,4 +1,7 @@
+import 'package:dashboard_barbershop/pages/agenda_page.dart';
+import 'package:dashboard_barbershop/pages/earnings_page.dart';
 import 'package:dashboard_barbershop/pages/login_page.dart';
+import 'package:dashboard_barbershop/pages/services_page.dart';
 import 'package:dashboard_barbershop/quick_action.dart';
 import 'package:dashboard_barbershop/services/barbers_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -97,9 +100,6 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 24),
 
             _buildQuickActions(context),
-            const SizedBox(height: 32),
-
-            _buildTodayAppointments(),
 
             const SizedBox(height: 32),
             if (isAdmin) _buildAdminSection(context),
@@ -189,54 +189,22 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.calendar_month,
           label: 'Agenda',
           onTap: () {
-            // TODO: ir a agenda
+            Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AgendaPage()));
           },
         ),
         QuickAction(
           icon: Icons.content_cut,
           label: 'Servicios',
           onTap: () {
-            // TODO: ir a servicios
+            Navigator.of(context).push(MaterialPageRoute(builder: (context)=> ServicesPage()));
           },
         ),
         QuickAction(
           icon: Icons.attach_money,
           label: 'Ganancias',
           onTap: () {
-            // TODO: ir a ganancias
+            Navigator.of(context).push(MaterialPageRoute(builder: (context)=> EarningsPage()));
           },
-        ),
-      ],
-    );
-  }
-
-  // =======================
-  Widget _buildTodayAppointments() {
-    if (data!.appointments.isEmpty) {
-      return const Text('No hay citas hoy');
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Citas de hoy',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: data!.appointments.map(
-                  (a) => AppointmentTile(
-                appointment: a,
-                onDone: () {},
-                onCancel: () {},
-              ),
-            ).toList(),
-          ),
         ),
       ],
     );
