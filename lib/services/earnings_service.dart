@@ -7,16 +7,23 @@ class EarningsService {
 
   Future<int> getDayEarnings(DateTime date) async {
     final key = _keyFromDate(date);
-    final snap = await _db.child('appointments/$_uid/$key').get();
+
+    final snap = await _db.child('appointments').get();
 
     if (!snap.exists) return 0;
 
-    final Map data = snap.value as Map;
+    final Map raw = Map<String, dynamic>.from(snap.value as Map);
+
     int total = 0;
 
-    data.forEach((_, value) {
-      if (value['status'] == 'done') {
-        total += value['price'] as int;
+    raw.forEach((_, value) {
+      print("entre");
+      final map = Map<String, dynamic>.from(value);
+
+      if (map['barberId'] == _uid &&
+          map['dateKey'] == key &&
+          map['paymentStatus'] == 'done') {
+        total += _toInt(map['amount']);
       }
     });
 
@@ -40,3 +47,11 @@ class EarningsService {
 
   String _two(int n) => n.toString().padLeft(2, '0');
 }
+
+int _toInt(dynamic v) {
+  if (v == null) return 0;
+  if (v is int) return v;
+  if (v is double) return v.toInt();
+  return int.tryParse(v.toString()) ?? 0;
+}
+

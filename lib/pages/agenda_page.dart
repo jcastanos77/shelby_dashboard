@@ -44,10 +44,6 @@ class _AgendaPageState extends State<AgendaPage> {
     });
   }
 
-
-
-  // ================= UI =================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,12 +89,12 @@ class _AgendaPageState extends State<AgendaPage> {
         return AppointmentTile(
           appointment: a,
           onDone: () async {
-            await _agenda.updateStatus(selectedDate, a.time, 'done');
+            await _agenda.updateStatus(a.id, 'done');
             if (!mounted) return;
             _load();
           },
           onCancel: () async {
-            await _agenda.updateStatus(selectedDate, a.time, 'cancelled');
+            await _agenda.updateStatus(a.id, 'cancelled');
             if (!mounted) return;
             _load();
           },

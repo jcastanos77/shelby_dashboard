@@ -12,20 +12,35 @@ class DashboardService {
   }
 
   Future<List<Appointment>> getTodayAppointments() async {
-    final snap = await _db
-        .child('appointments/$_uid/$todayKey')
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final now = DateTime.now();
+    final dateKey =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+    final snap = await FirebaseDatabase.instance
+        .ref('appointments') // 🔥 IMPORTANTE: raíz, no anidado
         .get();
 
     if (!snap.exists) return [];
 
-    final Map data = snap.value as Map;
+    final Map raw = Map<String, dynamic>.from(snap.value as Map);
 
     final list = <Appointment>[];
-    data.forEach((time, value) {
-      list.add(Appointment.fromMap(time, value));
+
+    raw.forEach((id, value) {
+      final map = Map<String, dynamic>.from(value);
+
+      /// 🔥 filtro manual (porque tu DB es plana)
+      if (map['barberId'] == uid && map['dateKey'] == dateKey) {
+        list.add(
+          Appointment.fromMap(map['hourKey'], map),
+        );
+      }
     });
 
     list.sort((a, b) => a.time.compareTo(b.time));
+
     return list;
   }
 

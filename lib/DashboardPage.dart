@@ -64,7 +64,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     if (loading || data == null) {
@@ -75,7 +74,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Shelby´s Barber'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
