@@ -17,7 +17,6 @@ class EarningsService {
     int total = 0;
 
     raw.forEach((_, value) {
-      print("entre");
       final map = Map<String, dynamic>.from(value);
 
       if (map['barberId'] == _uid &&

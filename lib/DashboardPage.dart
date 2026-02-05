@@ -7,6 +7,7 @@ import 'package:dashboard_barbershop/services/barbers_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'Metric.dart';
 import 'pages/barber_form_page.dart';
@@ -26,6 +27,8 @@ class _DashboardPageState extends State<DashboardPage> {
   DashboardData? data;
   bool loading = true;
   bool isAdmin = false;
+  bool mpConnected = false;
+
 
   @override
   void initState() {
@@ -34,10 +37,37 @@ class _DashboardPageState extends State<DashboardPage> {
     _checkPasswordStatus();
   }
 
+  Future<void> connectMercadoPago() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final url =
+        "https://auth.mercadopago.com.mx/authorization"
+        "?response_type=code"
+        "&client_id=APP_USR-006b239a-880b-4167-8487-02c6286dadf3"
+        "&redirect_uri=https://neon-seahorse-b85142.netlify.app/mp-callback"
+        "&state=$uid";
+
+    await launchUrl(
+      Uri.parse(url),
+      webOnlyWindowName: '_self',
+    );
+  }
+
   Future<void> load() async {
     data = await _controller.load();
     isAdmin = await BarbersService().isAdmin();
+    await _loadMpStatus();
     setState(() => loading = false);
+  }
+
+  Future<void> _loadMpStatus() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final snap = await FirebaseDatabase.instance
+        .ref('barbers/$uid/mpConnected')
+        .get();
+
+    mpConnected = snap.value == true;
   }
 
   Future<void> _checkPasswordStatus() async {
@@ -99,11 +129,41 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 24),
 
             _buildQuickActions(context),
+            const SizedBox(height: 24),
+
+            _buildMpConnectButton(),
+
+            const SizedBox(height: 24),
 
             const SizedBox(height: 32),
             if (isAdmin) _buildAdminSection(context),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMpConnectButton() {
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          mpConnected ? Icons.check_circle : Icons.link,
+          color: mpConnected ? Colors.green : Colors.orange,
+        ),
+        title: Text(
+          mpConnected
+              ? "Cuenta Mercado Pago conectada"
+              : "Conectar Mercado Pago",
+        ),
+        subtitle: Text(
+          mpConnected
+              ? "Recibes pagos directamente"
+              : "Recibe pagos en tu cuenta",
+        ),
+        trailing: mpConnected
+            ? null
+            : const Icon(Icons.chevron_right),
+        onTap: mpConnected ? null : connectMercadoPago,
       ),
     );
   }
