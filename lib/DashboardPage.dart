@@ -2,6 +2,7 @@ import 'package:dashboard_barbershop/pages/agenda_page.dart';
 import 'package:dashboard_barbershop/pages/earnings_page.dart';
 import 'package:dashboard_barbershop/pages/login_page.dart';
 import 'package:dashboard_barbershop/pages/services_page.dart';
+import 'package:dashboard_barbershop/pages/walkin_sale_page.dart';
 import 'package:dashboard_barbershop/quick_action.dart';
 import 'package:dashboard_barbershop/services/barbers_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,7 +13,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'Metric.dart';
 import 'pages/barber_form_page.dart';
 import 'pages/change_password_page.dart';
-import 'tiles/appointment_tile.dart';
 import 'controller/dashboard_controller.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -54,9 +54,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> load() async {
+    try {
     data = await _controller.load();
     isAdmin = await BarbersService().isAdmin();
     await _loadMpStatus();
+    } catch (e) {
+      debugPrint("🔥 dashboard error: $e");
+    }
     setState(() => loading = false);
   }
 
@@ -184,8 +188,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
-  // =======================
   Widget _buildTodaySummary() {
     return Row(
       children: [
@@ -195,6 +197,15 @@ class _DashboardPageState extends State<DashboardPage> {
             value: data!.totalCitas.toString(),
             icon: Icons.calendar_today,
             color: Colors.blue,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: MetricCard(
+            title: 'Walk-ins',
+            value: data!.totalWalkins.toString(),
+            icon: Icons.flash_on,
+            color: Colors.orange,
           ),
         ),
         const SizedBox(width: 12),
@@ -210,8 +221,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
-  // =======================
   Widget _buildNextAppointmentCard() {
     if (data!.nextAppointment == null) {
       return Card(
@@ -234,8 +243,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
-  // =======================
   Widget _buildQuickActions(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
@@ -244,6 +251,16 @@ class _DashboardPageState extends State<DashboardPage> {
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       children: [
+        QuickAction(
+          icon: Icons.flash_on,
+          label: 'Venta rápida',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => WalkinSalePage()),
+            );
+          },
+        ),
         QuickAction(
           icon: Icons.calendar_month,
           label: 'Agenda',
@@ -270,7 +287,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildAdminSection(BuildContext context) {
-    // aquí luego validas isAdmin
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -296,17 +313,4 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
-
-  AppointmentStatus _mapStatus(String s) {
-    switch (s) {
-      case 'done':
-        return AppointmentStatus.done;
-      case 'cancelled':
-        return AppointmentStatus.cancelled;
-      default:
-        return AppointmentStatus.pending;
-    }
-  }
-
-
 }

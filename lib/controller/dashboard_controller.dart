@@ -5,12 +5,14 @@ class DashboardData {
   final List<Appointment> appointments;
   final int totalCitas;
   final int totalGanancia;
+  final int totalWalkins;
   final Appointment? nextAppointment;
 
   DashboardData({
     required this.appointments,
     required this.totalCitas,
     required this.totalGanancia,
+    required this.totalWalkins,
     required this.nextAppointment,
   });
 }
@@ -20,6 +22,7 @@ class DashboardController {
 
   Future<DashboardData> load() async {
     final list = await _service.getTodayAppointments();
+    final walkins = await _service.getTodayWalkinsCount();
 
     int total = 0;
     int count = 0;
@@ -44,6 +47,7 @@ class DashboardController {
     return DashboardData(
       appointments: list,
       totalCitas: count,
+      totalWalkins: walkins,
       totalGanancia: total,
       nextAppointment: next,
     );

@@ -11,32 +11,26 @@ class DashboardService {
     return '${now.year}-${_two(now.month)}-${_two(now.day)}';
   }
 
+  /// ===============================
+  /// TODAS las citas del día (walkin + booking)
+  /// ===============================
   Future<List<Appointment>> getTodayAppointments() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-
-    final now = DateTime.now();
-    final dateKey =
-        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
-    final snap = await FirebaseDatabase.instance
-        .ref('appointments') // 🔥 IMPORTANTE: raíz, no anidado
+    final snap = await _db
+        .child('appointments/$_uid/$todayKey')
         .get();
 
     if (!snap.exists) return [];
 
-    final Map raw = Map<String, dynamic>.from(snap.value as Map);
+    final raw = Map<String, dynamic>.from(snap.value as Map);
 
     final list = <Appointment>[];
 
-    raw.forEach((id, value) {
+    raw.forEach((hour, value) {
       final map = Map<String, dynamic>.from(value);
 
-      /// 🔥 filtro manual (porque tu DB es plana)
-      if (map['barberId'] == uid && map['dateKey'] == dateKey) {
-        list.add(
-          Appointment.fromMap(map['hourKey'], map),
-        );
-      }
+      if (map['type'] == 'walkin') return;
+
+      list.add(Appointment.fromMap(hour, map));
     });
 
     list.sort((a, b) => a.time.compareTo(b.time));
@@ -44,5 +38,58 @@ class DashboardService {
     return list;
   }
 
+  Future<int> getTodayWalkinsCount() async {
+    final snap = await _db
+        .child('appointments/$_uid/$todayKey')
+        .get();
+
+    if (!snap.exists) return 0;
+
+    final raw = Map<String, dynamic>.from(snap.value as Map);
+
+    int count = 0;
+
+    raw.forEach((_, value) {
+      final map = Map<String, dynamic>.from(value);
+
+      if (map['type'] == 'walkin') {
+        count++;
+      }
+    });
+    return count;
+  }
+
+  /// ===============================
+  /// TOTAL GANANCIA DEL DÍA
+  /// ===============================
+  Future<int> getTodayTotal() async {
+    final snap = await _db
+        .child('appointments/$_uid/$todayKey')
+        .get();
+
+    if (!snap.exists) return 0;
+
+    final raw = Map<String, dynamic>.from(snap.value as Map);
+
+    int total = 0;
+
+    raw.forEach((_, value) {
+      final map = Map<String, dynamic>.from(value);
+
+      if (map['paid'] == true) {
+        total += _toInt(map['price'] ?? map['amount']);
+      }
+    });
+
+    return total;
+  }
+
   String _two(int n) => n.toString().padLeft(2, '0');
+}
+
+int _toInt(dynamic v) {
+  if (v == null) return 0;
+  if (v is int) return v;
+  if (v is double) return v.toInt();
+  return int.tryParse(v.toString()) ?? 0;
 }

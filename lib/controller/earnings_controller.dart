@@ -26,7 +26,7 @@ class EarningsController {
 
     final monthStart = DateTime(now.year, now.month, 1);
     final monthEnd =
-    DateTime(now.year, now.month + 1, 0); // último día del mes
+    DateTime(now.year, now.month + 1, 0);
     final month =
     await _service.getRangeEarnings(monthStart, monthEnd);
 

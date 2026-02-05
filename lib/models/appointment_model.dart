@@ -14,6 +14,7 @@ class Appointment {
   final String phone;
   final int createdAt;
 
+
   Appointment({
     required this.id,
     required this.time,
@@ -29,10 +30,12 @@ class Appointment {
     required this.createdAt,
   });
 
+
   factory Appointment.fromMap(String id, Map<dynamic, dynamic> data) {
+    final safeTime = _safeTime((data['hourKey'] ?? '').toString());
     return Appointment(
       id: id,
-      time: (data['hourKey'] ?? '').toString(),
+      time: safeTime,
       clientName: (data['clientName'] ?? '').toString(),
       service: (data['service'] ?? '').toString(),
 
@@ -70,4 +73,17 @@ class Appointment {
     if (v is int) return v == 1;
     return false;
   }
+
+  static String _safeTime(String? t) {
+    if (t == null) return "00:00";
+
+    // formato correcto HH:mm
+    final regex = RegExp(r'^\d{2}:\d{2}$');
+
+    if (regex.hasMatch(t)) return t;
+
+    // walk-in o basura → fallback
+    return "00:00";
+  }
+
 }

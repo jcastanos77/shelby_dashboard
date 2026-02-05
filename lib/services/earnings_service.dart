@@ -5,6 +5,9 @@ class EarningsService {
   final _db = FirebaseDatabase.instance.ref();
   final _uid = FirebaseAuth.instance.currentUser!.uid;
 
+  // =========================
+  // GANANCIA DEL DÍA
+  // =========================
   Future<int> getDayEarnings(DateTime date) async {
     final key = _keyFromDate(date);
 
@@ -21,14 +24,17 @@ class EarningsService {
 
       if (map['barberId'] == _uid &&
           map['dateKey'] == key &&
-          map['paymentStatus'] == 'done') {
-        total += _toInt(map['amount']);
+          map['paid'] == true) {
+        total += _toInt(map['price'] ?? map['amount']);
       }
     });
 
     return total;
   }
 
+  // =========================
+  // RANGO
+  // =========================
   Future<int> getRangeEarnings(DateTime from, DateTime to) async {
     int total = 0;
 
@@ -53,4 +59,3 @@ int _toInt(dynamic v) {
   if (v is double) return v.toInt();
   return int.tryParse(v.toString()) ?? 0;
 }
-
