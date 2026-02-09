@@ -3,8 +3,32 @@ import 'package:dashboard_barbershop/pages/mp_callback_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
 import 'auth_gate.dart';
 import 'firebase_options.dart';
+
+final _router = GoRouter(
+  initialLocation: '/',
+
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (_, __) => const AuthGate(),
+    ),
+
+    /// Dashboard
+    GoRoute(
+      path: '/dashboard',
+      builder: (_, __) => const DashboardHome(),
+    ),
+
+    /// 🔥 OAuth callback MercadoPago
+    GoRoute(
+      path: '/mp-callback',
+      builder: (_, __) => const MpCallbackPage(),
+    ),
+  ],
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,19 +45,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Barbershop',
       theme: ThemeData.dark(),
-      home: const AuthGate(),
-        onGenerateRoute: (settings){
-          switch (settings.name) {
-            case '/mp-callback':
-              return MaterialPageRoute(builder: (_) => const MpCallbackPage());
-            default:
-              return MaterialPageRoute(builder: (_) => const DashboardHome());
-          }
-          }
+      routerConfig: _router,
     );
   }
 }
