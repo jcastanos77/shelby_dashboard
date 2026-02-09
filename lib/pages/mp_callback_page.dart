@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:go_router/go_router.dart';
 
 class MpCallbackPage extends StatefulWidget {
   const MpCallbackPage({super.key});
@@ -35,19 +36,14 @@ class _MpCallbackPageState extends State<MpCallbackPage> {
         'code': code,
         'uid': uid,
       });
-      _goHome();
 
-    } catch (e) {
-      _goHome();
-    }
+    } catch (_) {}
+
+    _goHome();
   }
 
   void _goHome() {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/',
-          (route) => false,
-    );
+    context.go('/'); // ✅ GoRouter
   }
 
   @override
