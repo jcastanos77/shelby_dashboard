@@ -108,7 +108,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shelby´s Barber v1'),
+        title: const Text('Shelby´s Barber v2'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
