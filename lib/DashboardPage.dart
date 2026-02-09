@@ -44,7 +44,7 @@ class _DashboardPageState extends State<DashboardPage> {
         "https://auth.mercadopago.com.mx/authorization"
         "?response_type=code"
         "&client_id=5613672986759950"
-        "&redirect_uri=https://neon-seahorse-b85142.netlify.app/mp-callback"
+        "&redirect_uri=https://dashboardshelby.netlify.app/mp-callback"
         "&state=$uid";
 
     await launchUrl(
