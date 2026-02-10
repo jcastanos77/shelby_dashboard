@@ -32,10 +32,12 @@ class Appointment {
 
 
   factory Appointment.fromMap(String id, Map<dynamic, dynamic> data) {
-    final safeTime = _safeTime((data['hourKey'] ?? '').toString());
+    final hour = (data['hourKey'] ?? id ?? '00:00').toString();
+
     return Appointment(
       id: id,
-      time: safeTime,
+      time: _safeTime(hour),
+
       clientName: (data['clientName'] ?? '').toString(),
       service: (data['service'] ?? '').toString(),
 
@@ -43,7 +45,7 @@ class Appointment {
 
       price: _toInt(data['amount']),
 
-      advance: data['paid'] == true ? _toInt(data['amount']) : 0,
+      advance: _toBool(data['paid']) ? _toInt(data['amount']) : 0,
 
       paid: _toBool(data['paid']),
 
@@ -82,7 +84,6 @@ class Appointment {
 
     if (regex.hasMatch(t)) return t;
 
-    // walk-in o basura → fallback
     return "00:00";
   }
 

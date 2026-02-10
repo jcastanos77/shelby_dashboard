@@ -15,22 +15,26 @@ class DashboardService {
   /// TODAS las citas del día (walkin + booking)
   /// ===============================
   Future<List<Appointment>> getTodayAppointments() async {
-    final snap = await _db
-        .child('appointments/$_uid/$todayKey')
-        .get();
+    final snap = await _db.child('appointments').get();
 
-    if (!snap.exists) return [];
+    if (!snap.exists || snap.value == null) return [];
 
-    final raw = Map<String, dynamic>.from(snap.value as Map);
+    final raw = Map<String, dynamic>.from(
+      snap.value as Map<dynamic, dynamic>,
+    );
 
     final list = <Appointment>[];
 
-    raw.forEach((hour, value) {
+    raw.forEach((id, value) {
       final map = Map<String, dynamic>.from(value);
 
+      if (map['barberId'] != _uid) return;
+      if (map['dateKey'] != todayKey) return;
+
+      // solo citas reales, no walkins
       if (map['type'] == 'walkin') return;
 
-      list.add(Appointment.fromMap(hour, map));
+      list.add(Appointment.fromMap(id, map));
     });
 
     list.sort((a, b) => a.time.compareTo(b.time));
@@ -38,24 +42,30 @@ class DashboardService {
     return list;
   }
 
+  /// ===============================
+  /// WALKINS DEL DÍA
+  /// ===============================
   Future<int> getTodayWalkinsCount() async {
-    final snap = await _db
-        .child('appointments/$_uid/$todayKey')
-        .get();
+    final snap = await _db.child('appointments').get();
 
-    if (!snap.exists) return 0;
+    if (!snap.exists || snap.value == null) return 0;
 
-    final raw = Map<String, dynamic>.from(snap.value as Map);
+    final raw = Map<String, dynamic>.from(
+      snap.value as Map<dynamic, dynamic>,
+    );
 
     int count = 0;
 
     raw.forEach((_, value) {
       final map = Map<String, dynamic>.from(value);
 
-      if (map['type'] == 'walkin') {
+      if (map['barberId'] == _uid &&
+          map['dateKey'] == todayKey &&
+          map['type'] == 'walkin') {
         count++;
       }
     });
+
     return count;
   }
 
@@ -63,26 +73,54 @@ class DashboardService {
   /// TOTAL GANANCIA DEL DÍA
   /// ===============================
   Future<int> getTodayTotal() async {
-    final snap = await _db
-        .child('appointments/$_uid/$todayKey')
-        .get();
+    final snap = await _db.child('appointments').get();
 
-    if (!snap.exists) return 0;
+    if (!snap.exists || snap.value == null) return 0;
 
-    final raw = Map<String, dynamic>.from(snap.value as Map);
+    final raw = Map<String, dynamic>.from(
+      snap.value as Map<dynamic, dynamic>,
+    );
 
     int total = 0;
 
     raw.forEach((_, value) {
       final map = Map<String, dynamic>.from(value);
 
-      if (map['paid'] == true) {
-        total += _toInt(map['price'] ?? map['amount']);
+      if (map['barberId'] == _uid &&
+          map['dateKey'] == todayKey &&
+          map['paid'] == true) {
+        total += _toInt(map['amount'] ?? map['price']);
       }
     });
 
     return total;
   }
+
+  Future<List<Appointment>> getAppointmentsByDate(String dateKey) async {
+    final snap = await _db.child('appointments').get();
+
+    if (!snap.exists || snap.value == null) return [];
+
+    final raw = Map<String, dynamic>.from(
+      snap.value as Map<dynamic, dynamic>,
+    );
+
+    final list = <Appointment>[];
+
+    raw.forEach((id, value) {
+      final map = Map<String, dynamic>.from(value);
+
+      if (map['barberId'] != _uid) return;
+      if (map['dateKey'] != dateKey) return;
+
+      list.add(Appointment.fromMap(id, map));
+    });
+
+    list.sort((a, b) => a.time.compareTo(b.time));
+
+    return list;
+  }
+
 
   String _two(int n) => n.toString().padLeft(2, '0');
 }
