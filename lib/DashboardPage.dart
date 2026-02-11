@@ -1,4 +1,5 @@
 import 'package:dashboard_barbershop/pages/agenda_page.dart';
+import 'package:dashboard_barbershop/pages/barber_gallery_page.dart';
 import 'package:dashboard_barbershop/pages/earnings_page.dart';
 import 'package:dashboard_barbershop/pages/login_page.dart';
 import 'package:dashboard_barbershop/pages/services_page.dart';
@@ -310,7 +311,25 @@ class _DashboardPageState extends State<DashboardPage> {
             },
           ),
         ),
-      ],
+
+    Card(
+    child: ListTile(
+    leading: const Icon(Icons.image),
+    title: const Text('Galeria'),
+    subtitle: const Text('Administrar tus imagenes'),
+    trailing: const Icon(Icons.chevron_right),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const BarberGalleryPage(),
+        ),
+      );
+    },
+    ),
+    ),
+
+    ],
     );
   }
 }
