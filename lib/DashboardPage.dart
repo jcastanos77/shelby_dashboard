@@ -9,11 +9,11 @@ import 'package:dashboard_barbershop/services/barbers_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'Metric.dart';
 import 'pages/barber_form_page.dart';
-import 'pages/change_password_page.dart';
 import 'controller/dashboard_controller.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -83,20 +83,13 @@ class _DashboardPageState extends State<DashboardPage> {
         .get();
 
     if (snap.value == true) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
-      );
+      context.go('/change-password');
     }
   }
 
   Future<void> logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-          (route) => false,
-    );
+    context.go('/login');
   }
 
   @override

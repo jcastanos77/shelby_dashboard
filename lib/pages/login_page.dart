@@ -1,9 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../DashboardPage.dart';
-import 'change_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,31 +18,89 @@ class _LoginPageState extends State<LoginPage> {
   bool loading = false;
   String? error;
 
+  Future<void> _resetPassword() async {
+    final email = emailCtrl.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => error = "Escribe tu correo primero");
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance
+          .sendPasswordResetEmail(email: email);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Te enviamos un correo para restablecer contraseña 📩"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        if (e.code == 'user-not-found') {
+          error = "No existe una cuenta con ese correo";
+        } else if (e.code == 'invalid-email') {
+          error = "Correo inválido";
+        } else {
+          error = "Error al enviar correo";
+        }
+      });
+    }
+  }
+
   Future<void> login(BuildContext context) async {
-    final cred = await FirebaseAuth.instance
-        .signInWithEmailAndPassword(
-      email: emailCtrl.text.trim(),
-      password: passCtrl.text.trim(),
-    );
+    setState(() {
+      loading = true;
+      error = null;
+    });
 
-    final uid = cred.user!.uid;
-
-    final snap = await FirebaseDatabase.instance
-        .ref('barbers/$uid')
-        .get();
-
-    final isDefault = snap.child('passwordDefault').value == true;
-
-    if (isDefault) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+    try {
+      final cred = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+        email: emailCtrl.text.trim(),
+        password: passCtrl.text.trim(),
       );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-      );
+
+      final uid = cred.user!.uid;
+
+      final snap = await FirebaseDatabase.instance
+          .ref('barbers/$uid')
+          .get();
+
+      final role = snap.child('role').value?.toString() ?? 'barber';
+      final isDefault = snap.child('passwordDefault').value == true;
+
+      if (!mounted) return;
+
+      if (role == 'owner') {
+        context.go('/owner');
+        return;
+      }
+
+      if (isDefault) {
+        context.go('/change-password');
+        return;
+      }
+
+      context.go('/dashboard');
+
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        if (e.code == 'user-not-found') {
+          error = "Usuario no encontrado";
+        } else if (e.code == 'wrong-password') {
+          error = "Contraseña incorrecta";
+        } else {
+          error = "Error al iniciar sesión";
+        }
+      });
+    }
+
+    if (mounted) {
+      setState(() => loading = false);
     }
   }
 
@@ -73,6 +130,15 @@ class _LoginPageState extends State<LoginPage> {
                   icon: Icons.lock,
                   obscure: true,
                 ),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _resetPassword,
+                    child: const Text("¿Olvidaste tu contraseña?"),
+                  ),
+                ),
+
 
                 if (error != null) ...[
                   const SizedBox(height: 16),
@@ -108,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
         Icon(Icons.content_cut, size: 72),
         SizedBox(height: 12),
         Text(
-          'Barber Dashboard',
+          'Shelby´s Dashboard',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 4),
