@@ -14,6 +14,7 @@ class AgendaPage extends StatefulWidget {
 
 class _AgendaPageState extends State<AgendaPage> {
   late final AgendaService _agenda;
+  bool isFullDayBlocked = false;
 
   late String selectedDate;
   bool loading = true;
@@ -36,13 +37,28 @@ class _AgendaPageState extends State<AgendaPage> {
 
     final data = await _agenda.getAppointmentsByDate(selectedDate);
 
+    // 🔥 verificar si todas son tipo block
+    bool fullBlocked = false;
+
+    if (data.isNotEmpty) {
+      final blocks = data.where((a) =>
+      a.status == 'blocked_day' ||
+          a.type == 'block');
+
+      if (blocks.length >= _workingHoursCount(DateTime.parse(selectedDate))) {
+        fullBlocked = true;
+      }
+    }
+
     if (!mounted) return;
 
     setState(() {
       appointments = data;
+      isFullDayBlocked = fullBlocked;
       loading = false;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +76,26 @@ class _AgendaPageState extends State<AgendaPage> {
       body: Column(
         children: [
           _buildDateHeader(),
+
+          if (isFullDayBlocked)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: Colors.red.shade700,
+              child: const Text(
+                "🔴 DÍA COMPLETAMENTE BLOQUEADO",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
           Expanded(child: _buildBody()),
         ],
       ),
+
     );
   }
 
@@ -76,6 +109,15 @@ class _AgendaPageState extends State<AgendaPage> {
         child: Text(
           'No hay citas este día',
           style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    if (isFullDayBlocked) {
+      return const Center(
+        child: Text(
+          "No se pueden agendar citas este día",
+          style: TextStyle(fontSize: 16, color: Colors.red),
         ),
       );
     }
@@ -156,6 +198,8 @@ class _AgendaPageState extends State<AgendaPage> {
     TimeOfDay? from;
     TimeOfDay? to;
 
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
     showDialog(
       context: context,
       builder: (_) {
@@ -166,6 +210,36 @@ class _AgendaPageState extends State<AgendaPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+
+                  /// 🔥 BOTÓN BLOQUEAR DÍA COMPLETO
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.event_busy),
+                      label: const Text("Bloquear día completo"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      onPressed: () async {
+
+                        await BlockService().blockFullDay(
+                          barberId: uid,
+                          date: DateTime.parse(selectedDate),
+                        );
+
+                        if (!mounted) return;
+
+                        Navigator.pop(context);
+                        _load();
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const SizedBox(height: 10),
+
+                  /// 🔥 BLOQUEO POR RANGO NORMAL
                   ListTile(
                     title: const Text('Desde'),
                     trailing: Text(from?.format(context) ?? '--:--'),
@@ -203,6 +277,7 @@ class _AgendaPageState extends State<AgendaPage> {
                   onPressed: from == null || to == null
                       ? null
                       : () async {
+
                     await BlockService().blockTime(
                       date: DateTime.parse(selectedDate),
                       from: _fmt(from!),
@@ -212,12 +287,10 @@ class _AgendaPageState extends State<AgendaPage> {
 
                     if (!mounted) return;
 
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
+                    Navigator.pop(context);
                     _load();
                   },
-                  child: const Text('Bloquear'),
+                  child: const Text('Bloquear rango'),
                 ),
               ],
             );
@@ -257,4 +330,19 @@ class _AgendaPageState extends State<AgendaPage> {
     ];
     return '${d.day} de ${months[d.month - 1]} ${d.year}';
   }
+
+  int _workingHoursCount(DateTime date) {
+    final workingHours = {
+      1: [9,10,11,12,13,14,15,16,17,18,19,20],
+      2: [9,10,11,12,13,14,15,16,17,18,19,20],
+      3: [9,10,11,12,13,14,15,16,17,18,19,20],
+      4: [9,10,11,12,13,14,15,16,17,18,19,20],
+      5: [9,10,11,12,13,14,15,16,17,18,19,20],
+      6: [9,10,11,12,13,14,15,16,17,18,19,20],
+      7: [10,11,12,13,14,15,16],
+    };
+
+    return workingHours[date.weekday]?.length ?? 0;
+  }
+
 }

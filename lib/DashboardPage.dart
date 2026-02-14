@@ -1,5 +1,6 @@
 import 'package:dashboard_barbershop/pages/agenda_page.dart';
 import 'package:dashboard_barbershop/pages/barber_gallery_page.dart';
+import 'package:dashboard_barbershop/pages/credits_page.dart';
 import 'package:dashboard_barbershop/pages/earnings_page.dart';
 import 'package:dashboard_barbershop/pages/login_page.dart';
 import 'package:dashboard_barbershop/pages/services_page.dart';
@@ -276,7 +277,18 @@ class _DashboardPageState extends State<DashboardPage> {
             Navigator.of(context).push(MaterialPageRoute(builder: (context)=> EarningsPage()));
           },
         ),
-      ],
+    QuickAction(
+    icon: Icons.attach_money,
+    label: 'Creditos',
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CreditsPage()),
+      );
+    },
+    ),
+
+    ],
     );
   }
 

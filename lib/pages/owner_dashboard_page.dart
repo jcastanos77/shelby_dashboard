@@ -14,6 +14,7 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
 
   final _appointmentsDb = FirebaseDatabase.instance.ref('appointments');
   final _barbersDb = FirebaseDatabase.instance.ref('barbers');
+  final _paymentsDb = FirebaseDatabase.instance.ref('ownerPayments');
 
   final int commissionPerCut = 5;
 
@@ -31,10 +32,15 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     load();
   }
 
+  // ======================================================
+  // LOAD DATA
+  // ======================================================
+
   Future<void> load() async {
 
     final appointmentsSnap = await _appointmentsDb.get();
     final barbersSnap = await _barbersDb.get();
+    final paymentsSnap = await _paymentsDb.get();
 
     if (!appointmentsSnap.exists || !barbersSnap.exists) {
       setState(() => loading = false);
@@ -47,11 +53,17 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     final barbersRaw =
     Map<String, dynamic>.from(barbersSnap.value as Map);
 
+    final paymentsRaw = paymentsSnap.exists
+        ? Map<String, dynamic>.from(paymentsSnap.value as Map)
+        : {};
+
+    barberNames.clear();
+
     /// 🔥 Cargar nombres
     barbersRaw.forEach((uid, value) {
       if (value is Map) {
         final map = Map<String, dynamic>.from(value);
-        barberNames[uid] = map['name'] ?? 'Sin nombre';
+        barberNames[uid] = map['name']?.toString() ?? 'Sin nombre';
       }
     });
 
@@ -60,12 +72,16 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     final weekStartClean =
     DateTime(weekStart.year, weekStart.month, weekStart.day);
 
+    final weekKey = _currentWeekKey();
+
     Map<String, int> tempCuts = {};
     Map<String, int> tempDebt = {};
 
     appointmentsRaw.forEach((key, value) {
 
-      /// 🔥 WALK-IN
+      /// ===============================
+      /// WALK-IN (flat structure)
+      /// ===============================
       if (value is Map && value.containsKey('barberId')) {
 
         final map = Map<String, dynamic>.from(value);
@@ -83,6 +99,9 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
         if (appointmentDate.isBefore(weekStartClean)) return;
 
         final barberId = map['barberId'];
+        final payments = Map<String, dynamic>.from(paymentsRaw);
+
+        if (_isAlreadyPaid(payments, barberId, weekKey)) return;
 
         tempCuts[barberId] = (tempCuts[barberId] ?? 0) + 1;
         tempDebt[barberId] =
@@ -91,7 +110,9 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
         return;
       }
 
-      /// 🔥 BOOKINGS
+      /// ===============================
+      /// BOOKINGS (nested structure)
+      /// ===============================
       if (value is! Map) return;
 
       final dateMap = Map<String, dynamic>.from(value);
@@ -120,6 +141,10 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
 
           if (map['paymentStatus'] != 'done') return;
 
+          final payments = Map<String, dynamic>.from(paymentsRaw);
+
+          if (_isAlreadyPaid(payments, key, weekKey)) return;
+
           tempCuts[key] = (tempCuts[key] ?? 0) + 1;
           tempDebt[key] =
               (tempDebt[key] ?? 0) + commissionPerCut;
@@ -137,6 +162,21 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
       loading = false;
     });
   }
+
+  bool _isAlreadyPaid(
+      Map<String, dynamic> paymentsRaw,
+      String barberId,
+      String weekKey,
+      ) {
+    if (!paymentsRaw.containsKey(barberId)) return false;
+    final barberPayments =
+    Map<String, dynamic>.from(paymentsRaw[barberId]);
+    return barberPayments.containsKey(weekKey);
+  }
+
+  // ======================================================
+  // UI
+  // ======================================================
 
   @override
   Widget build(BuildContext context) {
@@ -158,18 +198,15 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              logout(context);
-            },
+            onPressed: () => logout(context),
           )
-        ]
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
 
-            /// 🔥 RESUMEN TOTAL
             _buildTotalCard(),
 
             const SizedBox(height: 24),
@@ -178,19 +215,21 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
               child: ListView.builder(
                 itemCount: sorted.length,
                 itemBuilder: (_, i) {
+
                   final barberId = sorted[i].key;
                   final debt = sorted[i].value;
                   final cuts = barberCuts[barberId] ?? 0;
                   final name = barberNames[barberId] ?? barberId;
 
                   return _buildBarberCard(
+                    barberId: barberId,
                     name: name,
                     cuts: cuts,
                     debt: debt,
                   );
                 },
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -227,6 +266,7 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
   }
 
   Widget _buildBarberCard({
+    required String barberId,
     required String name,
     required int cuts,
     required int debt,
@@ -284,7 +324,23 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
                 ),
-              )
+              ),
+
+              const SizedBox(height: 8),
+
+              if (debt > 0)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    minimumSize: const Size(120, 36),
+                  ),
+                  onPressed: () =>
+                      _markAsPaid(barberId, debt, cuts),
+                  child: const Text(
+                    "Marcar pagado",
+                    style: TextStyle(fontSize: 12, color: Colors.white),
+                  ),
+                )
             ],
           )
         ],
@@ -292,8 +348,48 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     );
   }
 
+  // ======================================================
+  // PAY WEEK
+  // ======================================================
+
+  String _currentWeekKey() {
+    final now = DateTime.now();
+    final firstDayOfYear = DateTime(now.year, 1, 1);
+    final weekNumber =
+        ((now.difference(firstDayOfYear).inDays) / 7).floor() + 1;
+
+    return "${now.year}-W${weekNumber.toString().padLeft(2, '0')}";
+  }
+
+  Future<void> _markAsPaid(
+      String barberId,
+      int amount,
+      int cuts,
+      ) async {
+
+    final weekKey = _currentWeekKey();
+
+    await _paymentsDb
+        .child(barberId)
+        .child(weekKey)
+        .set({
+      'amount': amount,
+      'cuts': cuts,
+      'paidAt': ServerValue.timestamp,
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Semana marcada como pagada"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    load();
+  }
+
   Future<void> logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    context.go('/login');
+    context.go('/');
   }
 }

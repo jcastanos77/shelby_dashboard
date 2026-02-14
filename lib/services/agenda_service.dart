@@ -38,4 +38,28 @@ class AgendaService {
         .set(status);
   }
 
+  Future<List<Appointment>> getCredits() async {
+    final snap = await _db.child('appointments').get();
+
+    if (!snap.exists) return [];
+
+    final raw = Map<String, dynamic>.from(
+      snap.value as Map<dynamic, dynamic>,
+    );
+
+    final list = <Appointment>[];
+
+    raw.forEach((id, value) {
+      final map = Map<String, dynamic>.from(value);
+
+      if (map['barberId'] != uid) return;
+      if (map['paymentStatus'] != 'credit_pending') return;
+
+      list.add(Appointment.fromMap(id, map));
+    });
+
+    return list;
+  }
+
+
 }

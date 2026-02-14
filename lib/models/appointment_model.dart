@@ -9,6 +9,8 @@ class Appointment {
   final int advance;   // anticipo
   final bool paid;     // true si pagó anticipo
   final String paymentMethod; // card | cash | ''
+final String type;
+
 
   final int duration;
   final String phone;
@@ -28,6 +30,7 @@ class Appointment {
     required this.duration,
     required this.phone,
     required this.createdAt,
+    required this.type
   });
 
 
@@ -50,7 +53,7 @@ class Appointment {
       paid: _toBool(data['paid']),
 
       paymentMethod: '',
-
+      type: data['type'],
       duration: _toInt(data['duration']),
       phone: (data['phone'] ?? '').toString(),
       createdAt: _toInt(data['createdAt']),
