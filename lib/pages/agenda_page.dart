@@ -1,5 +1,6 @@
 import 'package:dashboard_barbershop/services/agenda_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import '../../models/appointment_model.dart';
 import '../../services/block_service.dart';
@@ -27,6 +28,30 @@ class _AgendaPageState extends State<AgendaPage> {
     super.initState();
     _agenda = AgendaService(uid);
     selectedDate = _todayKey();
+    _load();
+  }
+
+  Future<void> _unblockFullDay() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final db = FirebaseDatabase.instance.ref();
+
+    final snapshot = await db.child('appointments').get();
+
+    if (!snapshot.exists) return;
+
+    final data = Map<String, dynamic>.from(snapshot.value as Map);
+
+    for (final entry in data.entries) {
+      final key = entry.key;
+      final value = Map<String, dynamic>.from(entry.value);
+
+      if (value['barberId'] == uid &&
+          value['dateKey'] == selectedDate &&
+          value['type'] == 'block') {
+        await db.child('appointments').child(key).remove();
+      }
+    }
+
     _load();
   }
 
@@ -82,13 +107,26 @@ class _AgendaPageState extends State<AgendaPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               color: Colors.red.shade700,
-              child: const Text(
-                "🔴 DÍA COMPLETAMENTE BLOQUEADO",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+              child: Column(
+                children: [
+                  const Text(
+                    "🔴 DÍA COMPLETAMENTE BLOQUEADO",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.red,
+                    ),
+                    onPressed: _unblockFullDay,
+                    child: const Text("Desbloquear día"),
+                  ),
+                ],
               ),
             ),
 

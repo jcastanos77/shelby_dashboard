@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "700349548345",
+    "firebase_url": "https://barber-shop-be4df-default-rtdb.firebaseio.com",
     "project_id": "barber-shop-be4df",
     "storage_bucket": "barber-shop-be4df.firebasestorage.app"
   },
